@@ -18,6 +18,6 @@ public class ParticleDisabler : MonoBehaviour
 		{
 			return;
 		}
-		Destroy(gameObject);
+		gameObject.SetActive(false);
 	}
 }

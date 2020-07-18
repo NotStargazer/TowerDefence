@@ -555,6 +555,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59658c11b4894c847a18e1afae55b12c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nextTile: {x: 0, y: 0, z: 0}
 --- !u!1 &3358623668058242833
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,110 +1,72 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class Tower : MonoBehaviour
+/// <summary>
+/// Base class for all towers.
+/// </summary>
+[RequireComponent(typeof(SphereCollider))]
+public abstract class Tower : MonoBehaviour
 {
-    [SerializeField] Transform firePoint;
+    private SphereCollider m_Collider;
+    [SerializeField] private float m_TowerRange;
+    [SerializeField] protected Transform m_FirePoint;
+    protected List<Enemy> m_Targets = new List<Enemy>();
+    //Next time tower will fire.
+    protected float m_FireTime;
+    //Wait time between each fire.
+    [SerializeField] protected float m_CooldownTime;
 
-    [SerializeField] LineRenderer freezeLaser;
-    [SerializeField] Bomb bomb;
-
-    [SerializeField] Material freezeTower;
-    [SerializeField] Material bombTower;
-
-    float fireTime;
-    List<Enemy> targets = new List<Enemy>();
-    TileType towerType;
+    private void Awake()
+    {
+        m_Collider = GetComponent<SphereCollider>();
+        m_Collider.radius = m_TowerRange;
+    }
 
     private void OnTriggerEnter(Collider other)
     {
-        targets.Add(other.gameObject.GetComponent<Enemy>());
+        m_Targets.Add(other.gameObject.GetComponent<Enemy>());
     }
 
     private void OnTriggerExit(Collider other)
     {
-        targets.Remove(other.gameObject.GetComponent<Enemy>());
-    }
-
-    private void Start()
-    {
-        towerType = GetComponentInParent<Tile>().type;
-        MeshRenderer rend = firePoint.parent.GetComponent<MeshRenderer>();
-        switch (towerType)
-        {
-            case TileType.TowerOne:
-                rend.material = freezeTower;
-                break;
-            case TileType.TowerTwo:
-                rend.material = bombTower;
-                break;
-        }
+        m_Targets.Remove(other.gameObject.GetComponent<Enemy>());
     }
 
     private void Update()
     {
-        if (targets.Count > 0)
+        if (m_Targets.Count > 0)
         {
-            if (fireTime < Time.time)
+            if (m_FireTime < Time.time)
             {
-                switch (towerType)
+                if (!m_Targets[0].gameObject.activeSelf)
                 {
-                    case TileType.TowerOne:
-                        fireTime = Time.time + MapLoader.Instance.mapData.bombTowerCooldownTime;
-                        break;
-                    case TileType.TowerTwo:
-                        fireTime = Time.time + MapLoader.Instance.mapData.freezeTowerCooldownTime;
-                        break;
+                    m_Targets.RemoveAt(0);
+                    m_FireTime = Time.time + m_CooldownTime;
+                    return;
                 }
-                FireAtTarget();
+
+                float distance = Vector3.Distance(m_Targets[0].transform.position, transform.position);
+
+                if (distance - m_Targets[0].transform.localScale.x > m_TowerRange)
+                {
+                    m_Targets.RemoveAt(0);
+                    return;
+                }
+
+                Fire();
+                m_FireTime = Time.time + m_CooldownTime;
             }
         }
     }
 
-    private void FireAtTarget()
+    /// <summary>
+    /// Needs to be overriden, Triggers when an enemy is in range of tower.
+    /// </summary>
+    public abstract void Fire();
+
+    private void OnDrawGizmos()
     {
-        if (targets[0] == null)
-        {
-            targets.RemoveAt(0);
-            fireTime = Time.time;
-            return;
-        }
-
-        switch (towerType)
-        {
-            case TileType.TowerOne:
-                FireBomb();
-                break;
-            case TileType.TowerTwo:
-                FireFreeze();
-                break;
-        }
-    }
-
-    private void FireFreeze()
-    {
-        float damage = MapLoader.Instance.mapData.freezeTowerDamage;
-        float slowAmount = MapLoader.Instance.mapData.freezeTowerSlowAmount;
-        float slowDuration = MapLoader.Instance.mapData.freezeTowerSlowDuration;
-
-        SpawnFreezeLaser(firePoint.position, targets[0].transform.position);
-
-        if (targets[0].DealDamage(damage, StatusAilments.Slowed, slowAmount, slowDuration) == 0)
-        {
-            targets.RemoveAt(0);
-        }
-    }
-
-    private void SpawnFreezeLaser(Vector3 firePoint, Vector3 enemyLocation)
-    {
-        LineRenderer lr = Instantiate(freezeLaser);
-        lr.SetPositions(new Vector3[] { firePoint, enemyLocation });
-    }
-
-    private void FireBomb()
-    {
-        Bomb bombProjectile = Instantiate(bomb, firePoint.position, Quaternion.identity);
-        bombProjectile.SetTarget(targets[0].transform);
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, m_TowerRange);
     }
 }

@@ -1,157 +1,163 @@
 ﻿using System;
 using System.Collections.Generic;
-using Tools;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+/// <summary>
+/// Base unit class, moves to the players base.
+/// </summary>
+public class Enemy : MonoBehaviour, IDamagable
 {
-    public static int enemiesRemaining;
+    public event Action<bool, int> EnemyKilled;
 
-    public static bool AreEnemiesAlive()
-    {
-        return enemiesRemaining > 0;
-    }
+    [Header("Unit Settings")]
+    [SerializeField] private float m_StandardUnitHealth = 100;
+    [SerializeField] private float m_StandardUnitSpeed = 2;
+    [SerializeField] private int m_StandardUnitDamage = 1;
+    [Space]
+    [SerializeField] private float m_LargeUnitHealth = 500;
+    [SerializeField] private float m_LargeUnitSpeed = 1;
+    [SerializeField] private int m_LargeUnitDamage = 5;
 
-    float health;
-    float maximumHealth;
-    float movementSpeed;
-    float maxMovementSpeed;
+    private float m_Health;
+    private float m_MaximumHealth;
+    private float m_MovementSpeed;
+    private float m_MaxMovementSpeed;
 
-
-    IEnumerator<Vector2Int> path;
-    public Vector3 nextTile;
-    Direction movingDirection;
-    Dictionary<StatusAilments, float> ailments = new Dictionary<StatusAilments, float>();
+    private IEnumerator<Vector2Int> m_Path;
+    private Vector3 m_NextTile;
+    private Dictionary<StatusAilments, float> m_Ailments = new Dictionary<StatusAilments, float>();
+    private UnitType m_Type;
 
     private void FixedUpdate()
     {
-        transform.position = Vector3.MoveTowards(transform.position, nextTile, Time.fixedDeltaTime * movementSpeed);
+        transform.position = Vector3.MoveTowards(transform.position, m_NextTile, Time.fixedDeltaTime * m_MovementSpeed);
 
-        if (Vector3.Distance(transform.position, nextTile) < 0.05f)
+        if (Vector3.Distance(transform.position, m_NextTile) < 0.05f)
         {
-            nextTile = GetNextTile();
-            movingDirection = GetDirection();
+            m_NextTile = GetNextTile();
         }
     }
 
     private void Update()
     {
-        foreach (var ailment in ailments)
+        foreach (var ailment in m_Ailments)
         {
             if (ailment.Value < Time.time)
             {
                 switch (ailment.Key)
                 {
                     case StatusAilments.Slowed:
-                        movementSpeed = maxMovementSpeed;
+                        m_MovementSpeed = m_MaxMovementSpeed;
                         break;
                 }
-                ailments.Remove(ailment.Key);
+                m_Ailments.Remove(ailment.Key);
                 return;
             }
         }
     }
 
+    /// <summary>
+    /// Gets the next tile in the path.
+    /// </summary>
     private Vector3 GetNextTile()
     {
-        if (!path.MoveNext())
+        if (!m_Path.MoveNext())
         {
             ReachEnd();
         }
-        return new Vector3(path.Current.x, 0.5f, path.Current.y);
+        return new Vector3(m_Path.Current.x, 0.5f, m_Path.Current.y);
     }
 
+    /// <summary>
+    /// Once there is no more tiles to travel to in the path the enemy invoke the killed event and disable itself.
+    /// </summary>
     private void ReachEnd()
     {
-        enemiesRemaining--;
-        Destroy(transform.parent.gameObject);
+        int damageToDealEnemy = 0;
+        switch (m_Type)
+        {
+            case UnitType.Standard:
+                damageToDealEnemy = m_StandardUnitDamage;
+                break;
+            case UnitType.Big:
+                damageToDealEnemy = m_LargeUnitDamage;
+                break;
+        }
+        if (EnemyKilled != null)
+        {
+            EnemyKilled.Invoke(false, damageToDealEnemy);
+        }
+        gameObject.SetActive(false);
     }
 
-    private Direction GetDirection()
+    /// <summary>
+    /// Construct enemy and instantiate dependencies.
+    /// </summary>
+    public void ConstructEnemy(UnitType unit, IEnumerator<Vector2Int> aiPath)
     {
-        Vector3 difference = transform.position - nextTile;
-
-        if (Mathf.RoundToInt(difference.x) > 0)
+        m_Type = unit;
+        if (m_Type == UnitType.Standard)
         {
-            return Direction.Right;
-        }
-
-        if (Mathf.RoundToInt(difference.x) < 0)
-        {
-            return Direction.Left;
-        }
-
-        if (Mathf.RoundToInt(difference.z) > 0)
-        {
-            return Direction.Down;
-        }
-
-        if (Mathf.RoundToInt(difference.z) < 0)
-        {
-            return Direction.Up;
-        }
-
-        return Direction.Up;
-    }
-
-    public void InitializeEnemy(UnitType unit)
-    {
-        if (unit == UnitType.Standard)
-        {
-            maximumHealth = MapLoader.Instance.mapData.standardUnitHealth;
-            maxMovementSpeed = MapLoader.Instance.mapData.standardUnitSpeed;
-            health = maximumHealth;
-            movementSpeed = maxMovementSpeed;
+            m_MaximumHealth = m_StandardUnitHealth;
+            m_MaxMovementSpeed = m_StandardUnitSpeed;
+            transform.localScale = Vector3.one;
         }
         else
         {
-            maximumHealth = MapLoader.Instance.mapData.largeUnitHealth;
-            maxMovementSpeed = MapLoader.Instance.mapData.largeUnitSpeed;
-            transform.parent.localScale *= 1.5f;
-            health = maximumHealth;
-            movementSpeed = maxMovementSpeed;
+            m_MaximumHealth = m_LargeUnitHealth;
+            m_MaxMovementSpeed = m_LargeUnitSpeed;
+            transform.localScale = Vector3.one * 1.5f;
         }
 
-        path = MapLoader.Instance.AIpath.GetEnumerator();
-        nextTile = GetNextTile();
+        m_Health = m_MaximumHealth;
+        m_MovementSpeed = m_MaxMovementSpeed;
+
+        m_Path = aiPath;
+        m_NextTile = GetNextTile();
     }
 
+    /// <summary>
+    /// Deals damage to the enemy. If the health reaches 0, the enemy invoke the killed event and disable itself.
+    /// </summary>
+    /// <returns>The remaining health of the enemy.</returns>
     public float DealDamage(float damage)
     {
-        health -= damage;
-        if (health < 0)
+        m_Health -= damage;
+
+        if (m_Health < 0)
         {
-            Destroy(transform.parent.gameObject);
-            enemiesRemaining--;
+            EnemyKilled?.Invoke(false, 0);
+            gameObject.SetActive(false);
             return 0;
         }
 
-        return health;
+        return m_Health;
     }
 
+    /// <summary>
+    /// Deals damage to the enemy and applies a status ailment. If the health reaches 0, the enemy invoke the killed event and disable itself.
+    /// </summary>
+    /// <param name="ailment">Ailment type.</param>
+    /// <param name="effectPotency">The effectiveness of the Ailment. (Slow: 0 to 1)</param>
+    /// <param name="effectDuration">The duration of the Ailment.</param>
+    /// <returns>The remaining health of the enemy.</returns>
     public float DealDamage(float damage, StatusAilments ailment, float effectPotency, float effectDuration)
     {
-        health -= damage;
-
-        if (health < 0)
-        {
-            Destroy(transform.parent.gameObject);
-            enemiesRemaining--;
-            return 0;
-        }
-
         if (ailment == StatusAilments.Slowed)
         {
             Slow(effectPotency, effectDuration);
         }
 
-        return health;
+        return DealDamage(damage);
     }
 
+    /// <summary>
+    /// Slows the enemies movement speed based on effect potency, 0 to 1 (0% to 100%)
+    /// </summary>
     private void Slow(float effectPotency, float effectDuration)
     {
-        movementSpeed = maxMovementSpeed * (1 - effectPotency);
-        if (ailments.ContainsKey(StatusAilments.Slowed)) ailments[StatusAilments.Slowed] = Time.time + effectDuration;
-        else ailments.Add(StatusAilments.Slowed, Time.time + effectDuration);
+        m_MovementSpeed = m_MaxMovementSpeed * (1 - effectPotency);
+        if (m_Ailments.ContainsKey(StatusAilments.Slowed)) m_Ailments[StatusAilments.Slowed] = Time.time + effectDuration;
+        else m_Ailments.Add(StatusAilments.Slowed, Time.time + effectDuration);
     }
 }

@@ -255,7 +255,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1430611518195826670}
-  - component: {fileID: 8805458485817723687}
   m_Layer: 0
   m_Name: Tower_Model
   m_TagString: Untagged
@@ -279,19 +278,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8805458485817723687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5719485938209910767}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1be9d08d3edc04a40bb4b2b471419252, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  type: 2
 --- !u!1 &7391422965515881056
 GameObject:
   m_ObjectHideFlags: 0
@@ -350,7 +336,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d86744f65815bad418f6fc1db32ff09e, type: 2}
+  - {fileID: 2100000, guid: ce325e02ae48c13459a3ac21a2b0bea6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -409,8 +395,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1317031834752082198}
-  - component: {fileID: 1127520878727124493}
-  - component: {fileID: 9071856581839171708}
   m_Layer: 0
   m_Name: Tower
   m_TagString: Untagged
@@ -434,34 +418,3 @@ Transform:
   m_Father: {fileID: 1430611518195826670}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1127520878727124493
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8838888772816553698}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb294bf3ad7625c4293732f7655b8249, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  firePoint: {fileID: 8319623177269437157}
-  freezeLaser: {fileID: 459964213579100473, guid: 2d1d703ed67ba9f43ab1c94373f42676,
-    type: 3}
-  bomb: {fileID: 114868712787828260, guid: e2865f010891d4cda90f443c0fe28d13, type: 3}
-  freezeTower: {fileID: 2100000, guid: ce325e02ae48c13459a3ac21a2b0bea6, type: 2}
-  bombTower: {fileID: 2100000, guid: d86744f65815bad418f6fc1db32ff09e, type: 2}
---- !u!135 &9071856581839171708
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8838888772816553698}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 5
-  m_Center: {x: 0, y: 0, z: 0}

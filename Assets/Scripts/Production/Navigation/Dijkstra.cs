@@ -1,16 +1,21 @@
-using System;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 
 namespace AI
 {
     //TODO: Implement IPathFinder using Dijsktra algorithm.
     public class Dijkstra : IPathFinder
     {
+        private MapLoader m_MapData;
+
+        public Dijkstra(MapLoader mapData)
+        {
+            m_MapData = mapData;
+        }
+
         public IEnumerable<Vector2Int> FindPath(Vector2Int start, Vector2Int goal)
         {
-            Tile[,] grid = MapLoader.Instance.grid;
+            Tile[,] grid = m_MapData.Grid;
             Tile startNode = grid[start.x, start.y];
             Tile endNode = grid[goal.x, goal.y];
 
@@ -25,7 +30,7 @@ namespace AI
 
                 for (int i = 1; i < openSet.Count; i++)
                 {
-                    if (openSet[i].hCost < currentNode.hCost) currentNode = openSet[i];
+                    if (openSet[i].HCost < currentNode.HCost) currentNode = openSet[i];
                 }
 
                 openSet.Remove(currentNode);
@@ -38,15 +43,15 @@ namespace AI
 
                 foreach (Tile neighbor in GetNeighbors(currentNode))
                 {
-                    if (!(neighbor.type == TileType.Path || neighbor.type == TileType.End) || closedSet.Contains(neighbor))
+                    if (!(neighbor.Type == TileType.Path || neighbor.Type == TileType.End) || closedSet.Contains(neighbor))
                     {
                         continue;
                     }
 
                     if (!openSet.Contains(neighbor))
                     {
-                        neighbor.hCost = GetDistance(neighbor, endNode);
-                        neighbor.parent = currentNode;
+                        neighbor.HCost = GetDistance(neighbor, endNode);
+                        neighbor.Parent = currentNode;
 
                         if (!openSet.Contains(neighbor))
                         {
@@ -71,11 +76,11 @@ namespace AI
 
             foreach (var item in moveDirections)
             {
-                int x = targetNode.pos.x + item.x;
-                int y = targetNode.pos.y + item.y;
-                if (x >= 0 && x < MapLoader.Instance.mapSize.x && y >= 0 && y < MapLoader.Instance.mapSize.y)
+                int x = targetNode.Pos.x + item.x;
+                int y = targetNode.Pos.y + item.y;
+                if (x >= 0 && x < m_MapData.MapSize.x && y >= 0 && y < m_MapData.MapSize.y)
                 {
-                    neighbors.Add(MapLoader.Instance.grid[x, y]);
+                    neighbors.Add(m_MapData.Grid[x, y]);
                 }
             }
 
@@ -89,13 +94,13 @@ namespace AI
 
             while (currentNode != startNode)
             {
-                if (!(currentNode.type == TileType.Path || currentNode.type == TileType.End) || !currentNode.parent)
+                if (!(currentNode.Type == TileType.Path || currentNode.Type == TileType.End) || !currentNode.Parent)
                 {
                     return null;
                 }
                 Vector3 node = currentNode.transform.position + Vector3.one / 2;
                 path.Add(Vector2Int.FloorToInt(new Vector2(node.x, node.z)));
-                currentNode = currentNode.parent;
+                currentNode = currentNode.Parent;
             }
             Vector3 start = startNode.transform.position + Vector3.one / 2;
             path.Add(Vector2Int.FloorToInt(new Vector2(start.x, start.z)));
@@ -107,8 +112,8 @@ namespace AI
 
         int GetDistance(Tile startNode, Tile targetNode)
         {
-            int disX = Mathf.Abs(startNode.pos.x - targetNode.pos.x);
-            int disY = Mathf.Abs(startNode.pos.y - targetNode.pos.y);
+            int disX = Mathf.Abs(startNode.Pos.x - targetNode.Pos.x);
+            int disY = Mathf.Abs(startNode.Pos.y - targetNode.Pos.y);
 
             if (disX > disY)
             {

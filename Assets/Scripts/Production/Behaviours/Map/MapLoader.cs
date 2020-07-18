@@ -1,53 +1,64 @@
 ﻿using AI;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Tools;
-using System;
+using System.Collections.Generic;
 
-[MonoSingletonConfiguration("Map")]
-public class MapLoader : MonoSingleton<MapLoader>
+/// <summary>
+/// Class responsible for generating the map in the scene.
+/// </summary>
+public class MapLoader : MonoBehaviour
 {
-    public MapSettings mapData;
-    [System.NonSerialized] public Tile[,] grid;
-    [System.NonSerialized] public Vector2Int mapSize;
-    [System.NonSerialized] public Vector2Int endTile;
-    [System.NonSerialized] public Vector2Int startTile;
-    [System.NonSerialized] public IEnumerable<Vector2Int> AIpath;
+    public MapSettings MapData;
+    public Player Player;
+    [System.NonSerialized] public Tile[,] Grid;
+    [System.NonSerialized] public Vector2Int MapSize;
+    private Vector2Int m_EndTile;
+    private Vector2Int m_StartTile;
 
-    private void Start()
+    private void Awake()
     {
         CreateMap();
         CreatePath();
         CreateUnitFactory();
     }
 
+    /// <summary>
+    /// Creates the Factory where enemies spawn from.
+    /// </summary>
     private void CreateUnitFactory()
     {
         GameObject factoryGo = new GameObject("Unit Factory");
-        factoryGo.transform.position = grid[startTile.x, startTile.y].transform.position;
-        factoryGo.ForceComponent<Factory>();
-        string waveData = mapData.map.text.Substring(mapData.map.text.IndexOf('#') + 2);
-        factoryGo.GetComponent<Factory>().CreateWaves(waveData);
+        factoryGo.transform.position = Grid[m_StartTile.x, m_StartTile.y].transform.position;
+        Factory factory = factoryGo.ForceComponent<Factory>();
+        string waveData = MapData.Map.text.Substring(MapData.Map.text.IndexOf('#') + 2);
+        factory.CreateWaves(waveData);
+        factory.Construct(MapData, Player, CreatePath());
     }
 
-    private void CreatePath()
+    /// <summary>
+    /// Creates the path that enemies will take to reach the players base.
+    /// </summary>
+    private IEnumerable<Vector2Int> CreatePath()
     {
-        var pathFinder = new Dijkstra();
-        AIpath = pathFinder.FindPath(startTile, endTile);
+        var pathFinder = new Dijkstra(this);
+        return pathFinder.FindPath(m_StartTile, m_EndTile);
     }
 
+    /// <summary>
+    /// Creates all the tiles listed in the map. Path, Obsticle, Bases and Towers.
+    /// </summary>
     private void CreateMap()
     {
         GameObject mapGo = new GameObject("Map");
-        mapSize.x = mapData.map.text.Substring(0, mapData.map.text.IndexOf('#')).Count(x => x == '\n');
-        mapSize.y = mapData.map.text.Substring(0, mapData.map.text.IndexOf('\n')).Length;
-        grid = new Tile[mapSize.x, mapSize.y];
+        MapSize.x = MapData.Map.text.Substring(0, MapData.Map.text.IndexOf('#')).Count(x => x == '\n');
+        MapSize.y = MapData.Map.text.Substring(0, MapData.Map.text.IndexOf('\n')).Length;
+        Grid = new Tile[MapSize.x, MapSize.y];
 
         short currentColumn = 0;
         short currentRow = 0;
 
-        foreach (char ch in mapData.map.text)
+        foreach (char ch in MapData.Map.text)
         {
             if (ch == '\n')
             {
@@ -56,44 +67,56 @@ public class MapLoader : MonoSingleton<MapLoader>
                 continue;
             }
 
-            if (ch == '#') 
+            if (ch == '#')
+            {
                 break;
+            }
 
             if (int.TryParse(ch.ToString(), out int tile))
             {
-                grid[currentRow, currentColumn] = Instantiate(GetTile(tile), new Vector3(currentRow * mapData.tileSize, 0, currentColumn * mapData.tileSize), Quaternion.identity);
-                grid[currentRow, currentColumn].transform.localScale.SetX(mapData.tileSize);
-                grid[currentRow, currentColumn].transform.localScale.SetZ(mapData.tileSize);
+                TileType tileT = (TileType)tile;
 
+                Grid[currentRow, currentColumn] = Instantiate(GetTile(tileT), new Vector3(currentRow * MapData.TileSize, 0, currentColumn * MapData.TileSize), Quaternion.identity);
+                Grid[currentRow, currentColumn].transform.localScale.SetX(MapData.TileSize);
+                Grid[currentRow, currentColumn].transform.localScale.SetZ(MapData.TileSize);         
+                Grid[currentRow, currentColumn].transform.SetParent(mapGo.transform);
+                Grid[currentRow, currentColumn].Pos = new Vector2Int(currentRow, currentColumn);
 
-                if (tile == 2 || tile == 3) grid[currentRow, currentColumn].type = (TileType)tile;
-
-                grid[currentRow, currentColumn].transform.SetParent(mapGo.transform);
-                grid[currentRow, currentColumn].pos = new Vector2Int(currentRow, currentColumn);
-
-                if (tile == 9) endTile = grid[currentRow, currentColumn].pos;
-                if (tile == 8) startTile = grid[currentRow, currentColumn].pos;
+                if (tileT == TileType.End)
+                {
+                    m_EndTile = Grid[currentRow, currentColumn].Pos;
+                }
+                if (tileT == TileType.Start)
+                {
+                    m_StartTile = Grid[currentRow, currentColumn].Pos;
+                }
 
                 currentColumn++;
             }
         }
     }
 
-    private Tile GetTile(int tile)
+    /// <summary>
+    /// Get the tile type.
+    /// </summary>
+    /// <param name="tile">Tile number ID</param>
+    /// <returns></returns>
+    private Tile GetTile(TileType tile)
     {
         switch (tile)
         {
-            case 0:
-                return mapData.path;
-            case 1:
-                return mapData.obstacle;
-            case 2:
-            case 3:
-                return mapData.tower;
-            case 8:
-                return mapData.start;
-            case 9:
-                return mapData.end;
+            case TileType.Path:
+                return MapData.Path;
+            case TileType.Obstacle:
+                return MapData.Obstacle;
+            case TileType.TowerOne:
+                return MapData.BombTower;
+            case TileType.TowerTwo:
+                return MapData.FreezeTower;
+            case TileType.Start:
+                return MapData.Start;
+            case TileType.End:
+                return MapData.End;
         }
 
         return new Tile();

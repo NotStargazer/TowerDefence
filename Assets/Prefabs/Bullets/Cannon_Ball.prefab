@@ -19,7 +19,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &225077031991834576
 Transform:
   m_ObjectHideFlags: 0
@@ -104,6 +104,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5affd0117c84c8a4fbca59eae16a92ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  explosion: {fileID: 4017425172858650093, guid: e14bcfb7d88c10b4ab96c7355232d0c2,
+  m_Explosion: {fileID: 4017425172858650093, guid: e14bcfb7d88c10b4ab96c7355232d0c2,
     type: 3}
-  projectileSpeed: 7
+  m_ExplosionRadius: 2
+  m_ExplosionDamage: 10
+  m_ProjectileSpeed: 7

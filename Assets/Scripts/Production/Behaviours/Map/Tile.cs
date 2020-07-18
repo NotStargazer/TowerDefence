@@ -1,17 +1,24 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
+/// <summary>
+/// Stores tile data for dijkstra and maploader.
+/// </summary>
 public class Tile : MonoBehaviour
 {
-    public TileType type;
-    [System.NonSerialized] public float hCost;
-    [System.NonSerialized] public Vector2Int pos;
-    [System.NonSerialized] public Tile parent;
+    public TileType Type;
+    [System.NonSerialized] public float HCost;
+    [System.NonSerialized] public Vector2Int Pos;
+    [System.NonSerialized] public Tile Parent;
 
+    /// <summary>
+    /// Evaluates if you can walk on this type of tile.
+    /// </summary>
     public bool CanWalk()
     {
-        if (type == TileType.Path) return true;
+        if (Type == TileType.Path)
+        {
+            return true;
+        }
 
         return false;
     }
